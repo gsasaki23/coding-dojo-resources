@@ -1,79 +1,92 @@
-# EF Setup Cheat Sheet
+# Setup Cheat Sheet for ASP.NET Core 2.2 + Entity Framework
+**_NOTE: Double check and change anything with a {{ }}!_**
 
 ## 1. Create New Project & Install Dependencies
-
-1. open terminal
-2. `dotnet new mvc --no-https -o ProjName`
-3. `cd ProjName`
+1. open terminal to desired project folder location
+2. `dotnet new mvc --no-https -o {{ProjName}}`
+3. `cd {{ProjName}}`
 4. `dotnet add package Pomelo.EntityFrameworkCore.MySql -v 2.2.0`
-   - this will add an installed package line to your `.csproj` file
-   - [Learn platform version number reference](http://learn.codingdojo.com/m/25/5675/40112)
+   - package will be installed and added to `.csproj` file in project
 5. `code .`
-
 ---
-
-## 2. `appsettings.json` (add your own db name and change password if needed)
-
-- add `"DBInfo"` property, don't forget the `,` that is needed between each property
-
-  - ```json
-      "DBInfo": {
-        "Name": "MySqlConnection",
-        "ConnectionString": "server=localhost;userid=root;password=root;port=3306;database=YOUR_DB_NAME;SslMode=None"
-      }
-    ```
-
+## 2. Edit `appsettings.json`
+- add `"DBInfo"` property
+  ```json
+   "DBInfo": {
+     "Name": "MySqlConnection",
+     "ConnectionString": "server=localhost;userid={{root}};password={{root}};port=3306;database={{YOUR_DB_NAME}};SslMode=None"
+   },
+  ```
 ---
+## 3. Create `DbContext` file inside `Models` folder
+- **_only add `DbSet` for models you want in MySQL database_**
+  ```csharp
+  using Microsoft.EntityFrameworkCore;
 
-## 3. Create basic `User` model in `Models` folder
+  namespace {{ProjName}}.Models
+  {
+    public class {{ProjNameContext}} : DbContext
+    {
+      public {{ProjNameContext}}(DbContextOptions options) : base(options) { }
 
-- right click in file pane -> New C# Class
-  - this should create the `namespace` line for you with your own project name
-- you can add the rest of the properties to this later or delete it if you don't need it
-
-- ```csharp
-  namespace ProjName.Models
+      // add every model you want in the DB
+      public DbSet<User> Users { get; set; }
+      public DbSet<Sample> Samples { get; set; }
+    }
+  }
+  ```
+---
+## 4. Create necessary models in `Models` folder
+- Remember to include `namespace` line in every file!
+  ```csharp
+  namespace {{ProjName}}.Models
   {
       public class User
       {
-        [Key] // the below prop is the primary key, [Key] is not needed if named with pattern: ModelNameId
+        [Key]
         public int UserId { get; set; }
 
         [Required(ErrorMessage = "is required")]
         [MinLength(2, ErrorMessage = "must be at least 2 characters")]
-        [Display(Name = "First Name")]
-        public string FirstName { get; set; }
+        [Display(Name = "Your Name: ")]
+        public string FullName { get; set; }
+        
+        [Required(ErrorMessage = "Required")]
+        [EmailAddress]
+        [Display(Name = "Email:")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Required")]
+        [MinLength(8, ErrorMessage = "must be at least 8 characters")]
+        [DataType(DataType.Password)] // Changes form input's type to password
+        [Display(Name = "Password:")]
+        public string Password { get; set; }
+
+        [NotMapped] // NOT ADDING TO DB
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Must match password")]
+        [Display(Name = "Confirm Password:")]
+        public string PasswordConfirm { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        
+        // any One-to-Many or Many-to-Many relationships and custom validators could go here
       }
   }
   ```
-
-## 4. Create `DbContext` model
-
-- **_only add `DbSet` for your models_**
-
-- ```csharp
-  using Microsoft.EntityFrameworkCore;
-
-  namespace ProjName.Models
-  {
-    public class ProjNameContext : DbContext
-    {
-      public ProjNameContext(DbContextOptions options) : base(options) { }
-
-      // for every model / entity that is going to be part of the db
-      // the names of these properties will be the names of the tables in the db
-      public DbSet<User> Users { get; set; }
-      public DbSet<Widget> Widgets { get; set; }
-      public DbSet<Item> Items { get; set; }
-    }
-  }
-  ```
-
 ---
+## 5. `Startup.cs`
+- Inside `ConfigureServices` method, add:
+  ```csharp
+  services.AddDbContext<{{ProjNameContext}}>(options => options.UseMySql(Configuration["DBInfo:ConnectionString"]));
+  services.AddSession();
+  services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+  ``` 
+  and use the lightbulb or manually add to the top of the file: `using {{namespace}}.Models;` and `using Microsoft.EntityFrameworkCore;`, replacing `namespace`
 
-## 5. [Delete the following lines from `Startup.cs`](http://learn.codingdojo.com/m/25/5671/39759)
-
-- ```csharp
+- Inside `ConfigureServices` method, remove or comment out:
+  ```csharp
     services.Configure<CookiePolicyOptions>(options =>
     {
       // This lambda determines whether user consent for non-essential cookies is needed for a given request.
@@ -81,87 +94,46 @@
       options.MinimumSameSitePolicy = SameSiteMode.None;
     });
   ```
-
-- `app.UseHttpsRedirection();`
-- `app.UseCookiePolicy();`
-
-- delete `<partial name="_CookieConsentPartial"></partial>` from `_Layout.cs`
-
----
-
-## 6. `ConfigureServices` method in `Startup.cs`
-
-- add the below lines using your own context name instead of `ProjNameContext`
-
-- ```csharp
-  services.AddDbContext<ProjNameContext>(options => options.UseMySql(Configuration["DBInfo:ConnectionString"]));
-  services.AddSession();
-  services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-  ```
-
----
-
-## 7. `Configure` method
-
-- add below lines above `app.UseMvc`
-
-- ```csharp
+- Inside `Configure` method, add ABOVE `app.UseMvc()`:
+  ```csharp
   app.UseStaticFiles();
   app.UseSession();
   ```
-
+- Inside `Configure` method, remove or comment out `app.UseHttpsRedirection();` and `app.UseCookiePolicy();`
 ---
-
-## 8. Add Controller Constructor to Receive DbContext (IN EVERY CONTROLLER YOU MAKE)
-
+## 7. `Views/Shared/_Layout.cshtml`
+- Remove or comment out `<partial name="_CookieConsentPartial"></partial>` (Around line 56)
+---
+## 8. To use DbContext in any Controller File
 - inside your controller class, at the top
-
-- ```csharp
-  private ForumContext db;
-  public HomeController(ForumContext context)
+  ```csharp
+  private {{ProjContext}} db;
+  public HomeController({{ProjContext}} context)
   {
     db = context;
   }
   ```
-
+  which will allow other methods to make calls like `db.Users.Add()`
 ---
 
 ## Create DB (Migrate)
-
+**You must migrate and update database EVERY time you change your models!**
 ---
-
-### 9. `dotnet ef migrations add GiveANameToThisMigration`
-
+### 9. `dotnet ef migrations add {{MigrationName}}`
 ---
-
 ### 10. `dotnet ef database update`
-
-- **EVERY time you migrate you need to update for the database to update**
-- **EVERY time you change your models you must migrate and then update database**
-
 ---
-
 ### 11. Verify DB & Tables in workbench or mysql Shell
-
-- you should see a `users` table with columns: `UserId` and `FirstName`
-
+- you should see a table with model attributes as columns
 ---
 
-## 12. Access Session from Views Directly
+## Bonus
 
+## Access Session from Views Directly
 - this is helpful if you are repeatedly adding the same thing from session into the `ViewBag` for many actions
 - add `@using Microsoft.AspNetCore.Http` in `Views/_ViewImports.cshtml`
 - add `services.AddHttpContextAccessor();` in `ConfigureServices` in `Startup.cs`
 - Access in a view: `<p>@Context.Session.GetString("UserFullName")</p>`
-
----
-
-## 13. Create Other Models and [Relationships](https://github.com/TheCodingDojo/student_md_docs/blob/master/CA-OC/csharp/relationships.md)
-
-- set up one relationship at a time
-  - then migrate and update database again
-    - this way, if the migration fails, you know that which relationship you ruined
-
 ---
 
 ## Request Response Cycle Review (if you can't explain this effortlessly when asked to, keep re-reading it)
@@ -174,13 +146,9 @@
    - a redirect triggers an additional request response cycle, the **_response_** is a redirect which triggers a **_request_** for the URL that the client was redirected to
 
 ---
-
 ## Routing Review
-
 ---
-
 ### Route Parameters
-
 - read the Request Response Cycle Review
 - a route parameter is a placeholder in a URL that is given a name when the route is set up in the controller
   - just like a parameter in a function, it is a placeholder name that will be given a value later on (when function is called / route is visited)
@@ -322,12 +290,6 @@
 
 ---
 
-## Validation review
-
-- when you `return View` to display error validations, if this page was originally passed a model, then you must pass that same model (data) to it again
-
----
-
 ## [Troubleshooting](https://github.com/TheCodingDojo/student_md_docs/blob/master/CA-OC/csharp/troubleshooting.md)
 
 ---
@@ -335,7 +297,3 @@
 ## [Relationship Advice](https://github.com/TheCodingDojo/student_md_docs/blob/master/CA-OC/csharp/relationships.md)
 
 ---
-
-## Old stuff
-
-- `dotnet add package MySql.Data.EntityFrameworkCore -v 8.0.11`
