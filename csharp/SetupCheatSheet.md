@@ -124,3 +124,6 @@
 ### 10. `dotnet ef database update` 
 ### 11. Verify DB & Tables in workbench or mysql Shell
 - you should see a table with model attributes as columns
+---
+
+## To get started: dotnet run
