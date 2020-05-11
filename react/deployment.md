@@ -1,31 +1,36 @@
-# Deployment Steps For projects with `server` folder and `env` in proj
+# For the Following Folder Structure (Before `npm run build`):
+    ```
+    ├─ project-name/
+    | ├─ client/
+    | | ├─ node_modules/
+    | | ├─ public/
+    | | ├─ src/
+    | | ├─ package.json
+    | ├─ server/
+    | | ├─ config/
+    | | ├─ controllers/
+    | | ├─ node_modules/
+    | | ├─ models/
+    | | ├─ routes/
+    | | ├─ package.json
+    | | ├─ server.js
+    | - .gitignore (with only node_modules/)
+    ```
+
+## Assumptions
+1. The default `create-react-app` git related files are deleted
+2. There is already a working repo
+
+## Github Steps
+1. Open terminal to `client` folder
+2. `npm run build`
+3. Push to master
+4. Double check that the `.gitignore` worked, and no `node_modules` folders are present
+
+
 - the differences are minor
 - create an AWS account then go to [AWS Management Console](https://us-west-1.console.aws.amazon.com/console/home?region=us-west-1)
 - [AWS page for after you have an instance set up](https://us-west-1.console.aws.amazon.com/ec2/v2/home?region=us-west-1#Instances:sort=instanceId)
-
-## Git Repo steps
-1. open project to `server` folder
-2. create a file named `.gitignore` at same level as `manage.py`
-    - add this code to it
-      - ``` txt
-        .vscode
-        env/
-        venv/
-        __pycache__/
-        .vscode/
-        db.sqlite3
-        ```
-3. from the `server` folder with `env` activated: `pip freeze > requirements.txt`
-4. Open terminal to `server` folder
-5. `git init`
-6. `git add .`
-7. `git commit -m "first commit"`
-8. [create a repo on github](https://github.com/new)
-    - after repo is created github will provide some steps:
-    1. paste the `git remote add` line to terminal
-    2. paste the `git push` line to terminal
-    3. refresh github and you should see your code on there
-        - make sure none of the folders/files in the `.gitignore` were added, if they were restart
 
 ## AWS EC2 Virtual Machine setup (***!!!!!!!REPLACE {{text}} WITH APPROPRIATE TEXT - DON'T KEEP CURLY BRACES!!!!!!!***)
 1. click Launch a virtual machine With EC2
