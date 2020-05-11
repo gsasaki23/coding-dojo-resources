@@ -75,104 +75,66 @@
     - `sudo mv build /var/www/html`
     - `sudo service nginx restart`
 23. Check the IP to make sure that the project front-end is now showing instead of default nginx
-24. Overwrite routes using grep to find all lines with string `localhost` and replace using Stream Editor
+24. If working with a Back-end, overwrite the `localhost` routes 
+    - Uses grep to find all lines with string `localhost` and replace using Stream Editor
     ```
     sudo grep -rl localhost /var/www/html | xargs sed -i 's/http:\/\/localhost:8000//g'
     ```
+25. `sudo service nginx restart` and check IP
 
-
-21. `git clone {{YOUR_REPO_URL}}` - click the Clone or download button on your repo to get the URL
-22. `sudo apt-get install python3-venv`
-    - y to continue if prompted
-23. `cd {{YOUR_REPO_NAME}}`
-24. `python3 -m venv env`
-    - new line will appear in terminal after it's finished
-    - `ls` should now show an `env` folder
-25. `source env/bin/activate` - should see `(env)` now in terminal
-26. `pip install -r requirements.txt`
-    - some errors like 'Failed building wheel for autopep8' are ok
-27. `pip install gunicorn`
-28. [Get ready for vim - vim has no mercy](http://learn.codingdojo.com/m/119/6138/42637)
-29. `cd {{YOUR_PROJECT_FOLDER_NAME}}` so that `ls` will show `settings.py`
-28. `sudo vim settings.py`
-29. press `i` to enter insert mode and use arrow keys / scroll to navigate to the correct place to type
-    - update the following lines:
-    1. `DEBUG = False`
-    2. `ALLOWED_HOSTS = ['{{YOUR_IPv4_Public_IP_ADDRESS}}']`
-        - this ip address is in description tab in AWS
-        - don't delete the quotes
-    3. `STATIC_ROOT = os.path.join(BASE_DIR, "static/")`
-        - paste this line at the bottom of file (right click, paste when in insert mode)
-    4. save and quit: press `esc`, type: `:wq`, press `enter`
-30. `cd ..` so `ls` shows `manage.py`
-31. `python manage.py collectstatic`
-32. `python manage.py makemigrations`
-33. `python manage.py migrate`
-34. test gunicorn to see if it works: `gunicorn {{DJANGO_PROJECT_NAME}}.wsgi`
-    - press `ctrl + c` to stop it
-35. type `deactivate` to deactivate `env`
-36. `sudo vim /etc/systemd/system/gunicorn.service`
-    1. copy below text into vscode and ***REPLACE ALL THE {{}} TEXT WITH RIGHT NAMES*** - remember you can use ctrl + D to select each occurrence
-        - ``` txt
-          [Unit]
-          Description=gunicorn daemon
-          After=network.target
-          [Service]
-          User=ubuntu
-          Group=www-data
-          WorkingDirectory=/home/ubuntu/{{YOUR_REPO_NAME}}
-          ExecStart=/home/ubuntu/{{YOUR_REPO_NAME}}/env/bin/gunicorn --workers 3 --bind unix:/home/ubuntu/{{YOUR_REPO_NAME}}/{{DJANGO_PROJ_NAME}}.sock {{DJANGO_PROJ_NAME}}.wsgi:application
-          [Install]
-          WantedBy=multi-user.target
-          ```
-    2. enter insert mode by pressing `i`
-    3. right click and paste the updated text
-    4. `esc` `:wq` `enter`
-37. `cd ..` to get out of repo folder
-38. `sudo systemctl daemon-reload`
-39. `sudo systemctl restart gunicorn`
-40. `sudo systemctl status gunicorn`
-    - should see a green dot and *'active (running)'* if it worked
-    - if you see failed or `Tasks: 1`, you will likely have to terminate instance and start over
-    - if you see any `{{}}` with an error, open the file in vim again and replace the `{{}}`
-    - **if you edit the `gunicorn.service` file after this point, you must run the above 3 commands again**
-41. press `ctrl + c`
-42. open this text in vscode:
-    - ``` txt
-      server {
-        listen 80;
-        server_name {{YOUR_EC2_IPv4_Public_IP_ADDRESS}};
-        location = /favicon.ico { access_log off; log_not_found off; }
-        location /static/ {
-            root /home/ubuntu/{{YOUR_REPO_NAME}};
+# Back-End
+26. Move to server folder with `cd ~/$repoName/server`
+26. Revive the `node_modules` we gitignored with whatever is listed in `packages.json`: `npm i`
+27. Install MongoDB
+    - `wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -`
+    - `echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list`
+    - `sudo apt update`
+    - `sudo apt install -y mongodb-org`
+28. Start MongoDB daemon and check status    
+    - `sudo service mongod start`
+    - `service mongod status`
+    - If a green message shows, OK to `ctrl+C` out
+29. Overwrite nginx settings so that requests starting with `/api` are pointed to the back-end, and everything else to `index.html`
+    - * Assuming that the port used was 8000. If not, edit it
+    - `sudo rm /etc/nginx/sites-available/default`
+    - `sudo vim /etc/nginx/sites-available/default`
+    - `i` to enter insert mode, paste the rest AFTER FIXING SERVER NAME
+    ```
+    # {{YOUR_REPO_NAME}} Configuration {{MM-DD-YYYY}}
+    server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+        server_name {{YOUR_REPO_NAME}};
+        location /api {
+            proxy_pass http://localhost:8000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;    
         }
         location / {
-            include proxy_params;
-            proxy_pass http://unix:/home/ubuntu/{{YOUR_REPO_NAME}}/{{DJANGO_PROJ_NAME}}.sock;
+            try_files $uri $uri/ =404;
         }
-      }
-      ```
-    1. ***REPLACE THE {{}}*** with appropriate names
-    2. `sudo vim /etc/nginx/sites-available/{{DJANGO_PROJ_NAME}}`
-    3. `i` to enter insert mode then
-    4. copy the edited text from VSCode
-    5. right click vim to paste
-    6. `esc` `:wq` `enter`
-43. `sudo ln -s /etc/nginx/sites-available/{{DJANGO_PROJ_NAME}} /etc/nginx/sites-enabled`
-44. `sudo nginx -t` to check if successful, if not, double check the vim file that was just created
-45. `sudo rm /etc/nginx/sites-enabled/default`
-46. `sudo service nginx restart`
-47. paste public ip address from AWS under description tab into browser
-- when you want to delete this AWS instance, right click it -> instance state -> terminate
+        error_page 404 /index.html;
+    }
+    ```
+    - `esc` then `:wq` `enter` to save
+30. Resets and check IP
+    - `cd ~/$repoName/server`
+    - `sudo service nginx restart`
+    - `node server.js`
+31. Install pm2 as a process manager to keep back-end running
+    - `sudo npm i pm2 -g`
+    - `pm2 start server.js`
+    - `pm2 status` to see status
 
-# Notes
-- what we pushed to github here was just the django proj and django app folder, normally the `server` folder would be pushed as well, but not pushing it avoids a few additional steps:
-  - adding the `.gitignore` up a level
-  - updating deplpoyment references to django proj folder to be preceded by `server/`
-  - `cd` through `server` to get to django proj folder
+32. Ready!
 
-# Updating deployed project with new code
-1. push changes to github repo
-2. `cd` to repo folder on the AWS server
+# To update deployed project with code changes
+1. Push changes to GitHub repo
+2. cd to repo folder on the AWS server: `cd ~/$repoName`
 3. `git pull`
-4. restart gunicorn & nginx
+4. Restart nginx with `sudo service nginx restart` and pm2
