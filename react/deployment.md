@@ -27,7 +27,9 @@
 
 ---
 ## AWS EC2 Virtual Machine setup (***!!!!!!!REPLACE {{text}} WITH APPROPRIATE TEXT - DON'T KEEP CURLY BRACES!!!!!!!***)
-- Login to [AWS Management Console](https://console.aws.amazon.com/ec2/v2/home)
+[AWS Management Console](https://console.aws.amazon.com/ec2/v2/home)
+
+# Instance Setup
 1. `Launch a virtual machine With EC2`
 2. Step 1: Select `Ubuntu Server 18.04 LTS (HVM) 64-bit`
 3. Step 2: Select `t2.micro`, `Next`
@@ -37,25 +39,48 @@
 7. Step 6: `Add Rule` for type `HTTPS` with Source `Anywhere`, then `Review and Launch`
 8. Reuse or create new PEM key. Save it to a folder you will **NEVER** use on GitHub
 9. Check the box, `Launch Instances`
+10. Coffee Break
 
---- Coffee break --- 
-
-10. Find the instance you just created. Change Name to whatever is appropriate
-11. Select and click `Connect`
-
-14. open terminal to where your downloaded pem file is located (***windows users USE BASH instead of command prompt***)
-15. click connect at top of the AWS console
-16. copy and paste the `chmod` line of code into your terminal that is opened to the location of your downloaded pem file
-17. copy and paste the `ssh` line of code into your terminal
-    - if connection time out error:
+# Ubuntu Setup
+11. Find the instance you just created. Change Name to whatever is appropriate
+12. Select and click `Connect`
+13. Go to PEM file location, open terminal (BASH for PC Users)
+13. Copy + Paste `chmod` line from AWS into terminal
+14. Copy + Paste `ssh -i` line from AWS into terminal, `yes` if prompted
+    - If connection time out error:
       1. description tab below click: Security groups launch-wizard-2
       2. Inbound tab
       3. click edit
-      4. add SSH with source My IP (any time your ip address changes you need to do this, your ip address will be different from home vs at the dojo)
-18. yes to continue if prompted
-19. `sudo apt-get update`
-20. `sudo apt-get install nginx`
-    - y to continue if prompted
+      4. add SSH with source My IP (any time your ip address changes you need to do this)
+15. Update Ubuntu software with `sudo apt-get update`
+16. Install dependencies with `sudo apt install nodejs npm nginx git -y`
+17. Node version will be 8.10.0, which is old. We use a PPA (personal package archive) to get a newer version.
+    ```
+    nodejs -v # should print 8.10.0
+    curl -sL https://deb.nodesource.com/setup_10.x -o nodesource_setup.sh
+    sudo bash nodesource_setup.sh
+    sudo apt install nodejs
+    nodejs -v # should now print 10.19.0
+    sudo apt install build-essential
+    ```
+18. Go to the IP shown in AWS, check that `Welcome to nginx!` page is showing
+19. Clone GitHub repo with `git clone {{YOUR_REPO_URL}}`
+20. Set repo name to variable with `export repoName={{YOUR_REPO_NAME}}`
+21. Check with `echo $repoName`
+
+# Front-End
+22. Move to client folder, replace the default nginx folder with the production react app
+    - `cd ~/$repoName/client`
+    - `sudo rm -rf /var/www/html`
+    - `sudo mv build /var/www/html`
+    - `sudo service nginx restart`
+23. Check the IP to make sure that the project front-end is now showing instead of default nginx
+24. Overwrite routes using grep to find all lines with string `localhost` and replace using Stream Editor
+    ```
+    sudo grep -rl localhost /var/www/html | xargs sed -i 's/http:\/\/localhost:8000//g'
+    ```
+
+
 21. `git clone {{YOUR_REPO_URL}}` - click the Clone or download button on your repo to get the URL
 22. `sudo apt-get install python3-venv`
     - y to continue if prompted
