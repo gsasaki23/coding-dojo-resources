@@ -1,5 +1,4 @@
-# For the Following Folder Structure (Before `npm run build`):
-    ```
+# For the Following Folder Structure (Before `npm run build`)
     ├─ project-name/
     | ├─ client/
     | | ├─ node_modules/
@@ -15,7 +14,6 @@
     | | ├─ package.json
     | | ├─ server.js
     | - .gitignore (with only node_modules/)
-    ```
 
 ## Assumptions
 1. The default `create-react-app` git related files are deleted
@@ -27,36 +25,24 @@
 3. Push to master
 4. Double check that the `.gitignore` worked, and no `node_modules` folders are present
 
-
-- the differences are minor
-- create an AWS account then go to [AWS Management Console](https://us-west-1.console.aws.amazon.com/console/home?region=us-west-1)
-- [AWS page for after you have an instance set up](https://us-west-1.console.aws.amazon.com/ec2/v2/home?region=us-west-1#Instances:sort=instanceId)
-
+---
 ## AWS EC2 Virtual Machine setup (***!!!!!!!REPLACE {{text}} WITH APPROPRIATE TEXT - DON'T KEEP CURLY BRACES!!!!!!!***)
-1. click Launch a virtual machine With EC2
-2. select Ubuntu Server 18.04 LTS (HVM)
-    - free tier eligible
-3. select free tier option
-4. click Review and Launch
-5. click Edit security groups
-6. SSH: Under Source: select My IP
-7. click Add Rule
-    - Type: HTTP
-    - Source: Anywhere
-8. click Add Rule
-    - Type: HTTPS
-    - Source: Anywhere
-9. click Review and Launch
-10. click Launch
-11. Select an existing key pair or create a new key pair
-    - steps to create a new key pair if you don't have one
-      1. select Create a new key pair
-      2. Key pair name: django_pem
-      3. click Download Key Pair
-          - save it to a folder you will **NEVER** use as a github repo
-      4. click Launch Instances
-12. click View Instances (will load for a few minutes)
-13. update Name column to: django
+- Login to [AWS Management Console](https://console.aws.amazon.com/ec2/v2/home)
+1. `Launch a virtual machine With EC2`
+2. Step 1: Select `Ubuntu Server 18.04 LTS (HVM) 64-bit`
+3. Step 2: Select `t2.micro`, `Next`
+4. Click `Next:` until Step 6
+5. Step 6: For type `SSH`, change Source to `My IP`
+6. Step 6: `Add Rule` for type `HTTP` with Source `Anywhere`
+7. Step 6: `Add Rule` for type `HTTPS` with Source `Anywhere`, then `Review and Launch`
+8. Reuse or create new PEM key. Save it to a folder you will **NEVER** use on GitHub
+9. Check the box, `Launch Instances`
+
+--- Coffee break --- 
+
+10. Find the instance you just created. Change Name to whatever is appropriate
+11. Select and click `Connect`
+
 14. open terminal to where your downloaded pem file is located (***windows users USE BASH instead of command prompt***)
 15. click connect at top of the AWS console
 16. copy and paste the `chmod` line of code into your terminal that is opened to the location of your downloaded pem file
